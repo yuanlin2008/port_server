@@ -1,7 +1,7 @@
 defmodule PortServer.Transport.Port do
   @behaviour PortServer.Transport
 
-  @type options :: {:port, Port.name(), list()}
+  @type options :: {Port.name(), list()}
 
   @port_options [
     :binary,
@@ -11,12 +11,23 @@ defmodule PortServer.Transport.Port do
   ]
 
   @impl true
-  def init({:port, name, options}) do
+  def init({name, options}) do
     Port.open(name, @port_options ++ options)
   end
 
   @impl true
-  def send(transport, data) do
-    Port.command(transport, data)
+  def send(port, data) do
+    Port.command(port, data)
+  end
+
+  @impl true
+  def recv(port, msg) do
+    case msg do
+      {^port, {:data, data}} ->
+        data
+
+      {:EXIT, ^port, reason} ->
+        {:error, reason}
+    end
   end
 end

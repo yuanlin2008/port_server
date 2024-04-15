@@ -1,0 +1,12 @@
+{
+  "image": "yuanlin2008/phoenix_node",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "pgourlain.erlang",
+        "JakeBecker.elixir-ls",
+        "phoenixframework.phoenix"
+      ]
+    }
+  }
+}

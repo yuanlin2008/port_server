@@ -2,10 +2,10 @@ defmodule ChannelTableTest do
   alias PortServer.ChannelTable
   use ExUnit.Case
 
-  test "access concurrently" do
-    n = 2048
+  @n 4096
 
-    Enum.map(1..n, fn i ->
+  test "concurrent access" do
+    Enum.map(1..@n, fn i ->
       Task.async(fn ->
         channel = ChannelTable.insert(i, 0)
         assert ChannelTable.get_owner(channel) == i
@@ -17,11 +17,9 @@ defmodule ChannelTableTest do
     |> Task.await_many()
   end
 
-  test "remove all channel belong to server" do
-    n = 2048
-
+  test "remove all channels belong to server" do
     channels =
-      Enum.map(1..n, fn i ->
+      Enum.map(1..@n, fn i ->
         Task.async(fn ->
           channel = ChannelTable.insert(i, 0)
           assert ChannelTable.get_owner(channel) == i

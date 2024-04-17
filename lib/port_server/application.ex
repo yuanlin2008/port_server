@@ -3,8 +3,9 @@ defmodule PortServer.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      PortServer.CallTable
+      PortServer.ChannelTable
     ]
+
     opts = [strategy: :one_for_one, name: PortServer.Supervisor]
     Supervisor.start_link(children, opts)
   end

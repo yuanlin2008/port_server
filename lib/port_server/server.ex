@@ -2,7 +2,7 @@ defmodule PortServer.Server do
   @moduledoc """
   """
   use GenServer
-  alias PortServer.Frame
+  # alias PortServer.Frame
   alias PortServer.Transport.{Port, Socket}
 
   @impl true
@@ -33,13 +33,14 @@ defmodule PortServer.Server do
       table: table,
       id: 0
     }
+
     {:noreply, state}
   end
 
-  @impl true
-  def handle_call({:call, payload}, from, state) do
-    id = state.id + 1
-    iodata = Frame.serialize({:call, state.id, payload})
-    {:noreply, %{state | id: id}}
-  end
+  # @impl true
+  # def handle_call({:call, payload}, from, state) do
+  #   id = state.id + 1
+  #   iodata = Frame.serialize({:call, state.id, payload})
+  #   {:noreply, %{state | id: id}}
+  # end
 end

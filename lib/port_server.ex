@@ -31,14 +31,15 @@ defmodule PortServer do
   @spec call(GenServer.server(), String.t(), term(), timeout()) :: term()
   def call(server, name, payload, timeout \\ 5000) do
     # encode
-    iodata = Jason.encode_to_iodata!(%{
-      name: name,
-      payload: payload
-    })
+    iodata =
+      Jason.encode_to_iodata!(%{
+        name: name,
+        payload: payload
+      })
+
     # call
     reply = GenServer.call(server, {:call, iodata}, timeout)
     # decode
     Jason.decode!(reply)
   end
-
 end

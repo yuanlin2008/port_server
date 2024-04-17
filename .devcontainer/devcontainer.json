@@ -2,8 +2,8 @@
   "image": "yuanlin2008/phoenix_node",
   "customizations": {
     "vscode": {
-      "settings":{
-        "editor.formatOnSave": true
+      "settings": {
+        //"editor.formatOnSave": true
       },
       "extensions": [
         "pgourlain.erlang",

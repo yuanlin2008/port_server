@@ -3,14 +3,17 @@ defmodule PortServer do
   Documentation for `PortServer`.
   """
   alias PortServer.Server
+  alias PortServer.Transport.{Port, Socket}
 
   @typedoc """
   Options to be passed to start_link.
   """
   @type options :: %{
-          transport: :port | :socket,
+          transport: Port | Socket,
           options: Port.options() | Socket.options()
         }
+
+  @type channel :: integer()
 
   @doc """
   """
@@ -28,18 +31,27 @@ defmodule PortServer do
 
   @doc """
   """
-  @spec call(GenServer.server(), String.t(), term(), timeout()) :: term()
-  def call(server, name, payload, timeout \\ 5000) do
-    # encode
-    iodata =
-      Jason.encode_to_iodata!(%{
-        name: name,
-        payload: payload
-      })
+  @spec open(GenServer.server(), String.t(), term(), timeout()) :: {channel(), term()}
+  def open(server, topic, payload, timeout \\ 5000) do
+    GenServer.call(server, {:open, topic, payload}, timeout)
+  end
 
-    # call
-    reply = GenServer.call(server, {:call, iodata}, timeout)
-    # decode
-    Jason.decode!(reply)
+  @spec close(GenServer.server(), channel()) :: :ok
+  def close(server, channel) do
+    GenServer.cast(server, {:close, channel})
+  end
+
+  @doc """
+  """
+  @spec call(GenServer.server(), channel(), String.t(), term(), timeout()) :: term()
+  def call(server, channel, name, payload, timeout \\ 5000) do
+    GenServer.call(server, {:call, channel, name, payload}, timeout)
+  end
+
+  @doc """
+  """
+  @spec cast(GenServer.server(), channel(), String.t(), term()) :: :ok
+  def cast(server, channel, name, payload) do
+    GenServer.cast(server, {:cast, channel, name, payload})
   end
 end

@@ -3,11 +3,9 @@ defmodule PortServer.ChannelTable do
   """
   use GenServer
 
-  @type channel :: integer()
-
   @doc """
   """
-  @spec insert(owner :: pid(), server :: pid()) :: channel()
+  @spec insert(owner :: pid(), server :: pid()) :: PortServer.channel()
   def insert(owner, server) do
     channel = :ets.update_counter(__MODULE__, :channel, 1, {:channel, 0})
     :ets.insert(__MODULE__, {channel, owner, server})
@@ -16,14 +14,14 @@ defmodule PortServer.ChannelTable do
 
   @doc """
   """
-  @spec remove(channel :: channel()) :: true
+  @spec remove(channel :: PortServer.channel()) :: true
   def remove(channel) do
     :ets.delete(__MODULE__, channel)
   end
 
   @doc """
   """
-  @spec get_owner(channel :: channel()) :: pid()
+  @spec get_owner(channel :: PortServer.channel()) :: pid()
   def get_owner(channel) do
     :ets.lookup_element(__MODULE__, channel, 2)
   end

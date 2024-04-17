@@ -2,8 +2,7 @@ defmodule PortServer.Server do
   @moduledoc """
   """
   use GenServer
-  # alias PortServer.Frame
-  alias PortServer.Transport.{Port, Socket}
+  alias PortServer.ChannelTable
 
   @impl true
   def init(options) do
@@ -11,30 +10,27 @@ defmodule PortServer.Server do
     {:ok, options, {:continue, :init}}
   end
 
-  @ets_options [:set, :private]
-
   @impl true
   def handle_continue(:init, options) do
-    # init transport
-    transport_mod =
-      case options.transport do
-        :port -> Port
-        :socket -> Socket
-      end
-
-    # call transport.init
-    transport = apply(transport_mod, :init, options.options)
-    # init request table
-    table = :ets.new(__MODULE__, @ets_options)
-
-    state = %{
-      transport_mod: transport_mod,
-      transport: transport,
-      table: table,
-      id: 0
-    }
-
+    transport_state = options.transport.init(options.options)
+    state = {options.transport, transport_state}
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_call({:open, topic, payload}, {owner,_}, {transport, trans_state} = state) do
+    #mref = Process.monitor(owner)
+    %{
+      type: :open,
+      channel: ChannelTable.insert(owner, self()),
+      topic: topic,
+      payload: payload
+    }|>encode!|>transport.send(trans_state)
+    {:noreply, state}
+  end
+
+  def handle_call({}, from, state) do
+
   end
 
   # @impl true
@@ -43,4 +39,7 @@ defmodule PortServer.Server do
   #   iodata = Frame.serialize({:call, state.id, payload})
   #   {:noreply, %{state | id: id}}
   # end
+
+  defp encode!(term), do: Jason.encode_to_iodata!(term, [])
+  defp decode!(bin), do: Jason.decode!(bin, keys: :atom!)
 end

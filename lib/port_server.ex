@@ -2,7 +2,7 @@ defmodule PortServer do
   @moduledoc """
   Documentation for `PortServer`.
   """
-  alias PortServer.ChannelTable
+  alias PortServer.CallTable
   alias PortServer.Server
   alias PortServer.Transport.{Port, Socket}
 
@@ -32,7 +32,7 @@ defmodule PortServer do
   """
   @spec call(GenServer.server(), String.t(), term(), timeout()) :: term()
   def call(server, name, payload, timeout \\ 5000) do
-    #channel_id = ChannelTable.insert(self(), )
+    call_id = CallTable.insert(self(), timeout + 1000)
     GenServer.call(server, {:call, name, payload}, timeout)
   end
 end

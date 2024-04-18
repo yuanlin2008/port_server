@@ -1,13 +1,25 @@
 defmodule PortServer.Frame do
-  @channel_size 64
-  @spec serialize(PortServer.ChannelTable.channel(), iodata()) :: iodata()
-  def serialize(channel, payload) do
-    [<<channel::@channel_size>>, payload]
+  @spec serialize(:call|:channel, integer(), String.t(), term()) :: iolist()
+  def serialize(type, id, name, payload) do
+    [transform_type(type), <<id::64>>,
+    Jason.encode_to_iodata!(%{
+      name: name,
+      payload: payload
+    })]
   end
 
-  @spec deserialize(binary()) :: {PortServer.ChannelTable.channel(), binary()}
+  @spec deserialize(binary()) :: {:call|:channel, integer(), binary()}
   def deserialize(bin) do
-    <<channel::@channel_size, rest::binary>> = bin
-    {channel, rest}
+    <<type::8, id::64, rest::binary>> = bin
+    {transform_type(type), id, rest}
+  end
+
+  defp transform_type(t) do
+    case t do
+      :call->0
+      :channel->1
+      0->:call
+      1->:channel
+    end
   end
 end

@@ -3,12 +3,18 @@ defmodule FrameTest do
   use ExUnit.Case, async: true
 
   test "serialize & deserialize" do
-    channel = 111
-    payload = "abcdefg"
+    id = 100
+    name = "123"
+    payload = %{
+      aaa: 123,
+      bbb: false
+    }
 
-    {^channel, ^payload} =
-      Frame.serialize(channel, payload)
-      |> :erlang.iolist_to_binary()
-      |> Frame.deserialize()
+    assert {:call, ^id, bin} = Frame.serialize(:call, id, name, payload)|>
+      :erlang.iolist_to_binary|>
+      Frame.deserialize()
+    assert {:channel, ^id, bin} = Frame.serialize(:channel, id, name, payload)|>
+      :erlang.iolist_to_binary|>
+      Frame.deserialize()
   end
 end

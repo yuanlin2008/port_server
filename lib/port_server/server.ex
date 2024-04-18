@@ -1,6 +1,9 @@
 defmodule PortServer.Server do
   @moduledoc """
   """
+  alias PortServer.ChannelTable
+  alias PortServer.CallTable
+  alias PortServer.Frame
   use GenServer
 
   @impl true
@@ -18,14 +21,42 @@ defmodule PortServer.Server do
 
   @impl true
   def handle_call({:send, frame}, _, {transport, port} = state) do
-    transport.send(frame, port)
+    transport.send(port, frame)
     {:noreply, state}
   end
 
-  # @impl true
-  # def handle_call({:call, payload}, from, state) do
-  #   id = state.id + 1
-  #   iodata = Frame.serialize({:call, state.id, payload})
-  #   {:noreply, %{state | id: id}}
-  # end
+  @impl true
+  def handle_info(msg, {transport, port} = state) do
+    case transport.recv(port, msg) do
+      {:ok, frame}->
+        handle_frame(frame)
+        {:noreply, state}
+      {:error, reason}->
+        {:stop, reason}
+      :ignore->
+        {:noreply, state}
+    end
+  end
+
+  defp handle_frame(bin) do
+    {type, id, payload} = Frame.deserialize(bin)
+    case type do
+      0-> handle_call_frame(id, payload)
+      1-> handle_channel_frame(id, payload)
+    end
+  end
+
+  defp handle_call_frame(id, payload) do
+    case CallTable.query(id) do
+      nil-> :ok
+      pid-> GenServer.reply(pid, payload)
+    end
+  end
+
+  defp handle_channel_frame(id, payload) do
+    case ChannelTable.query(id) do
+      nil-> false
+      pid-> GenServer.reply(pid, payload)
+    end
+  end
 end

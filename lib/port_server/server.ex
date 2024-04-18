@@ -11,26 +11,22 @@ defmodule PortServer.Server do
   end
 
   @impl true
-  def handle_continue(:init, options) do
-    transport_state = options.transport.init(options.options)
-    state = {options.transport, transport_state}
+  def handle_continue(:init, {transport, options}) do
+    port = transport.init(options)
+    state = {transport, port}
     {:noreply, state}
   end
 
   @impl true
-  def handle_call({:open, topic, payload}, {owner,_}, {transport, trans_state} = state) do
+  def handle_call({:open, topic, payload}, {owner,_}, {transport, port} = state) do
     #mref = Process.monitor(owner)
     %{
       type: :open,
       channel: ChannelTable.insert(owner, self()),
       topic: topic,
       payload: payload
-    }|>encode!|>transport.send(trans_state)
+    }|>encode!|>transport.send(port)
     {:noreply, state}
-  end
-
-  def handle_call({}, from, state) do
-
   end
 
   # @impl true

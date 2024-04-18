@@ -11,17 +11,18 @@ defmodule PortServer.CallTable do
   @doc """
   """
   @spec insert(pid(), non_neg_integer()) :: call_id()
-  def insert(pid, time) do
+  def insert(pid, timeout) do
     call_id = :ets.update_counter(@id_table, :id, 1, {:id, 0})
-    #time = :os.system_time(:millisecond) + timeout
+    time = :os.system_time(:millisecond) + timeout
     :ets.insert(@table, {call_id, pid, time})
     call_id
   end
 
   @doc """
   """
-  @spec clear_timeout(non_neg_integer()) :: non_neg_integer()
-  def clear_timeout(time) do
+  @spec clear_timeout() :: non_neg_integer()
+  def clear_timeout() do
+    time = :os.system_time(:millisecond)
     :ets.select_delete(@table, [{
       {:_, :_, :"$1"},
       [{:<, :"$1", time}],
@@ -62,6 +63,15 @@ defmodule PortServer.CallTable do
       {:write_concurrency, true}
     ])
 
-    {:ok, nil}
+    {:ok, nil, timeout()}
+  end
+
+  @impl true
+  def handle_info(:timeout, state) do
+    {:noreply, state, timeout()}
+  end
+
+  defp timeout() do
+    Application.get_env(:port_server, :clear_duration, 60000)
   end
 end

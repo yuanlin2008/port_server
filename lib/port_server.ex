@@ -2,6 +2,7 @@ defmodule PortServer do
   @moduledoc """
   Documentation for `PortServer`.
   """
+  alias PortServer.Frame
   alias PortServer.CallTable
   alias PortServer.Server
   alias PortServer.Transport.{Port, Socket}
@@ -32,7 +33,13 @@ defmodule PortServer do
   """
   @spec call(GenServer.server(), String.t(), term(), timeout()) :: term()
   def call(server, name, payload, timeout \\ 5000) do
-    call_id = CallTable.insert(self(), timeout + 1000)
-    GenServer.call(server, {:call, name, payload}, timeout)
+    frame = Frame.serialize(
+      0,
+      CallTable.insert(self(), timeout + 1000),
+      %{
+        name: name,
+        payload: payload
+    })
+    GenServer.call(server, {:send, frame}, timeout)
   end
 end

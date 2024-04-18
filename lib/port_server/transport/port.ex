@@ -16,7 +16,7 @@ defmodule PortServer.Transport.Port do
   end
 
   @impl true
-  def send(data, port) do
+  def send(port, data) do
     Port.command(port, data)
   end
 

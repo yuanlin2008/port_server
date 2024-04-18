@@ -21,7 +21,7 @@ defmodule PortServer.Channel do
   end
 
   @impl true
-  def init({server, topic, payload}) do
+  def init({server, _topic, _payload}) do
     server_pid = GenServer.whereis(server)
     # channel should be on the same node with server
     # because they share channel table.

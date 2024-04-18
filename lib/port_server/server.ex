@@ -2,7 +2,6 @@ defmodule PortServer.Server do
   @moduledoc """
   """
   use GenServer
-  alias PortServer.ChannelTable
 
   @impl true
   def init(options) do
@@ -18,14 +17,8 @@ defmodule PortServer.Server do
   end
 
   @impl true
-  def handle_call({:open, topic, payload}, {owner,_}, {transport, port} = state) do
-    #mref = Process.monitor(owner)
-    %{
-      type: :open,
-      channel: ChannelTable.insert(owner, self()),
-      topic: topic,
-      payload: payload
-    }|>encode!|>transport.send(port)
+  def handle_call({:send, frame}, _, {transport, port} = state) do
+    transport.send(frame, port)
     {:noreply, state}
   end
 
@@ -35,7 +28,4 @@ defmodule PortServer.Server do
   #   iodata = Frame.serialize({:call, state.id, payload})
   #   {:noreply, %{state | id: id}}
   # end
-
-  defp encode!(term), do: Jason.encode_to_iodata!(term, [])
-  defp decode!(bin), do: Jason.decode!(bin, keys: :atom!)
 end

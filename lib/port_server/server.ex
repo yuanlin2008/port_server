@@ -1,28 +1,35 @@
 defmodule PortServer.Server do
   @moduledoc """
   """
+  alias PortServer.Port
+  alias PortServer.CallReg
+  alias PortServer.ProcReg
   alias PortServer.ChannelTable
   alias PortServer.CallTable
   alias PortServer.Frame
   use GenServer
 
   @impl true
-  def init(options) do
-    # defer init
-    {:ok, options, {:continue, :init}}
+  def init({prog, args, options}) do
+    port = Port.open(prog, args, options)
+    {:ok, port}
   end
 
   @impl true
-  def handle_continue(:init, {transport, options}) do
-    port = transport.init(options)
-    state = {transport, port}
-    {:noreply, state}
+  def handle_call({:call,payload}, {pid, tag}, port) do
+    conn_id = ProcReg.query_id(pid)
+    CallReg.update_calltag(pid, tag)
+    cmd = Frame.serialize(:call, conn_id, payload)
+    Port.command(port, cmd)
+    {:noreply, port}
   end
 
   @impl true
-  def handle_call({:send, frame}, _, {transport, port} = state) do
-    transport.send(port, frame)
-    {:noreply, state}
+  def handle_cast({:cast, pid, payload}, port) do
+    conn_id = ProcReg.query_id(pid)
+    cmd = Frame.serialize(:cast, conn_id, payload)
+    Port.command(port, cmd)
+    {:noreply, port}
   end
 
   @impl true

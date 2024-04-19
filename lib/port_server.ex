@@ -2,18 +2,12 @@ defmodule PortServer do
   @moduledoc """
   Documentation for `PortServer`.
   """
-  alias PortServer.Frame
-  alias PortServer.CallTable
   alias PortServer.Server
-  alias PortServer.Transport.{Port, Socket}
 
   @typedoc """
   Options to be passed to start_link.
   """
-  @type options :: {
-          Port | Socket,
-          Port.options() | Socket.options()
-        }
+  @type options :: {String.t(), [String.t()], Keyword.t}
 
   @doc """
   """
@@ -33,15 +27,21 @@ defmodule PortServer do
   """
   @spec call(GenServer.server(), String.t(), term(), timeout()) :: term()
   def call(server, name, payload, timeout \\ 5000) do
-    frame = Frame.serialize(
-      0,
-      CallTable.insert(self(), timeout + 1000),
-      %{
-        name: name,
-        payload: payload
+    payload = Jason.encode!(%{
+      name: name,
+      payload: payload
     })
-    GenServer.call(server, {:send, frame}, timeout)
+    GenServer.call(server, {:call, payload}, timeout)|>
+    Jason.decode()
   end
 
+  @spec cast(GenServer.server(), String.t(), term()) :: term()
+  def cast(server, name, payload) do
+    payload = Jason.encode!(%{
+      name: name,
+      payload: payload
+    })
+    GenServer.cast(server, {:cast, self(), payload})
+  end
 
 end

@@ -6,26 +6,13 @@ defmodule PortServer.ProcReg do
 
   @type conn_id :: integer()
 
-  @table_id Module.concat([__MODULE__, Id])
-  @table Module.concat([__MODULE__, Table])
-
-  @spec insert_pid(pid()) :: conn_id()
-  def insert_pid(pid) when is_pid(pid) do
-    conn_id = :ets.update_counter(@table_id, :id, 1, {:id, 0})
-    :ets.insert(@table, [
-      {pid, conn_id},
-      {conn_id, pid}
-      ])
-    GenServer.cast(__MODULE__, {:monitor, pid})
-    conn_id
-  end
-
-  @spec query_id(pid()) :: conn_id() | nil
+  @spec query_id(pid()) :: conn_id()
   def query_id(pid) when is_pid(pid) do
     try do
-      :ets.lookup_element(@table, pid, 2)
+      :ets.lookup_element(__MODULE__, pid, 2)
     rescue
-      ArgumentError -> nil
+      ArgumentError ->
+        GenServer.call(__MODULE__, {:pid, pid})
     end
   end
 
@@ -35,7 +22,7 @@ defmodule PortServer.ProcReg do
   @spec query_pid(conn_id()) :: pid() | nil
   def query_pid(conn_id) when is_integer(conn_id) do
     try do
-      :ets.lookup_element(@table, conn_id, 2)
+      :ets.lookup_element(__MODULE__, conn_id, 2)
     rescue
       ArgumentError -> nil
     end
@@ -47,37 +34,37 @@ defmodule PortServer.ProcReg do
 
   @impl true
   def init(_) do
-    :ets.new(@table_id, [
-      :set,
-      :public,
+    :ets.new(__MODULE__, [
       :named_table,
-      {:read_concurrency, true},
-      {:write_concurrency, true}
-    ])
-    :ets.new(@table, [
       :set,
-      :public,
-      :named_table,
+      :protected,
       {:read_concurrency, true},
-      {:write_concurrency, true}
     ])
-    {:ok, nil}
+    {:ok, 0}
   end
 
   @impl true
-  def handle_cast({:monitor, pid}, state) do
-    # monitor this pid.
-    Process.monitor(pid)
-    {:noreply, state}
+  def handle_call({:pid, pid}, _, id) do
+    try do
+      conn_id = :ets.lookup_element(__MODULE__, pid, 2)
+      {:reply, conn_id, id}
+    rescue
+      ArgumentError ->
+      :ets.insert(__MODULE__, [
+        {pid, id},
+        {id, pid}
+        ])
+      {:reply, id, id+1}
+    end
   end
 
   @impl true
   def handle_info({:DOWN, _, :process, pid, :noproc}, state) do
     # clear ets.
     try do
-      conn_id = :ets.lookup_element(@table, pid, 2)
-      :ets.delete(@table, conn_id)
-      :ets.delete(@table, pid)
+      conn_id = :ets.lookup_element(__MODULE__, pid, 2)
+      :ets.delete(__MODULE__, conn_id)
+      :ets.delete(__MODULE__, pid)
     rescue
       ArgumentError -> :ok
     end

@@ -2,21 +2,15 @@ defmodule ProcRegTest do
   use ExUnit.Case, async: true
   alias PortServer.ProcReg
 
-  test "concurrent access" do
-    procs = Enum.map(1..4096, fn _ ->
-      Task.async(fn ->
-        assert ProcReg.query_id(self()) == nil
-        conn_id = ProcReg.insert_pid(self())
-        assert ProcReg.query_id(self()) == conn_id
-        assert ProcReg.query_pid(conn_id) == self()
-        {self(), conn_id}
+  test "query the same pid by multiple process" do
+    pid = spawn(fn-> receive do _ -> :ok end end)
+    ids = Enum.map(1..4096, fn _ ->
+        Task.async(fn ->
+          ProcReg.query_id(pid)
+        end)
       end)
-    end)
-    |> Task.await_many
-    :timer.sleep(1000)
-    Enum.each(procs, fn {pid, conn_id}->
-      assert ProcReg.query_id(pid) == nil
-      assert ProcReg.query_pid(conn_id) == nil
-    end)
+      |> Task.await_many
+    chk_id = ProcReg.query_id(pid)
+    assert Enum.all?(ids, &(&1 == chk_id))
   end
 end

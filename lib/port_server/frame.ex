@@ -21,10 +21,10 @@ defmodule PortServer.Frame do
   import PortServer.Frame.Types
 
   types(
-    call: 0,
-    cast: 1,
-    monitor: 2,
-    down: 3
+    ps_call: 0,
+    ps_cast: 1,
+    ps_monitor: 2,
+    ps_down: 3
   )
 
   @spec serialize(atom(), integer(), binary()) :: iodata()

@@ -3,16 +3,12 @@ defmodule FrameTest do
   use ExUnit.Case, async: true
 
   test "serialize & deserialize" do
-    type = 128
-    id = 100
-    payload = %{
-      "aaa"=> 123,
-      "bbb"=> false
-    }
-
-    assert {^type, ^id, bin} =
-      Frame.serialize(type, id, payload)|>
-      Frame.deserialize()
-    assert ^payload = Jason.decode!(bin)
+    chan_id = 100
+    Enum.map(Frame.types, fn {k,_}->
+      assert {^k, ^chan_id, "abc"} =
+        Frame.serialize(k, chan_id, "abc")
+        |>:erlang.iolist_to_binary
+        |>Frame.deserialize
+    end)
   end
 end

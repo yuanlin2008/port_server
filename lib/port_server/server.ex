@@ -47,10 +47,15 @@ defmodule PortServer.Server do
   end
 
   @impl true
-  def handle_info({:DOWN, _, :process, pid, _reason}, port) do
+  def handle_info({:DOWN, _ref, :process, pid, _reason}, port) do
     conn_id = ProcReg.query_id(pid)
     cmd = Frame.serialize(:ps_down, conn_id, <<>>)
     Port.command(port, cmd)
     {:noreply, port}
+  end
+
+  @impl true
+  def handle_info({_port, {:exit_status, _status}}, port) do
+    {:stop, :error, port}
   end
 end

@@ -12,8 +12,10 @@ defmodule PortServer.Server do
   end
 
   @impl true
-  def handle_call({:call,payload}, {pid, tag}, port) do
-    frame = Frame.serialize({:call, pid, tag}, payload)
+  def handle_call({:call, payload}, {pid, tag}, port) do
+    pid = :erlang.term_to_binary(pid)
+    tag = :erlang.term_to_binary(tag)
+    frame = Frame.serialize(:call, pid, tag, payload)
     Port.command(port, frame)
     {:noreply, port}
   end
@@ -26,21 +28,26 @@ defmodule PortServer.Server do
 
   @impl true
   def handle_info({_, {:data, data}}, port) do
-    {header, payload} = Frame.deserialize(data)
-    case header do
-      {:call, pid, tag}->
+    frame = Frame.deserialize(data)
+
+    case frame do
+      {:call, pid, tag, payload} ->
         GenServer.reply({pid, tag}, payload)
-      {:cast, pid}->
+
+      {:cast, pid, payload} ->
         GenServer.cast(pid, payload)
-      {:monitor, pid}->
+
+      {:monitor, pid} ->
         Process.monitor(pid)
     end
+
     {:noreply, port}
   end
 
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, port) do
-    Port.command(port, Frame.serialize({:down, pid}, <<>>))
+    frame = Frame.serialize(:down, pid)
+    Port.command(port, frame)
     {:noreply, port}
   end
 

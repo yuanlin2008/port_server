@@ -8,7 +8,7 @@ defmodule PortServer do
   @typedoc """
   Options to be passed to start_link.
   """
-  @type options :: {String.t(), [String.t()], Keyword.t}
+  @type options :: {String.t(), [String.t()], Keyword.t()}
 
   @doc """
   """
@@ -28,22 +28,25 @@ defmodule PortServer do
   """
   @spec call(GenServer.server(), String.t(), term(), timeout()) :: term()
   def call(server, name, payload, timeout \\ 5000) do
-    payload = Jason.encode!(%{
-      name: name,
-      payload: payload
-    })
-    GenServer.call(server, {:call, payload}, timeout)|>
-    Jason.decode()
+    payload =
+      Jason.encode!(%{
+        name: name,
+        payload: payload
+      })
+
+    GenServer.call(server, {:call, payload}, timeout)
+    |> Jason.decode()
   end
 
   @spec cast(GenServer.server(), String.t(), term()) :: term()
   def cast(server, name, payload) do
-    payload = Jason.encode!(%{
-      name: name,
-      payload: payload
-    })
-    frame = Frame.serialize({:cast, self()}, payload)
+    payload =
+      Jason.encode!(%{
+        name: name,
+        payload: payload
+      })
+
+    frame = Frame.serialize(:cast, self(), payload)
     GenServer.cast(server, {:cast, frame})
   end
-
 end

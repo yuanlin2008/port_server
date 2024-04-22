@@ -2,6 +2,7 @@ defmodule PortServer do
   @moduledoc """
   Documentation for `PortServer`.
   """
+  alias PortServer.Frame
   alias PortServer.Server
 
   @typedoc """
@@ -41,7 +42,8 @@ defmodule PortServer do
       name: name,
       payload: payload
     })
-    GenServer.cast(server, {:cast, self(), payload})
+    frame = Frame.serialize({:cast, self()}, payload)
+    GenServer.cast(server, {:cast, frame})
   end
 
 end

@@ -2,8 +2,6 @@ defmodule PortServer.Server do
   @moduledoc """
   """
   alias PortServer.Port
-  alias PortServer.CallReg
-  alias PortServer.ProcReg
   alias PortServer.Frame
   use GenServer
 
@@ -15,32 +13,26 @@ defmodule PortServer.Server do
 
   @impl true
   def handle_call({:call,payload}, {pid, tag}, port) do
-    conn_id = ProcReg.query_id(pid)
-    CallReg.update_calltag(pid, tag)
-    cmd = Frame.serialize(:ps_call, conn_id, payload)
-    Port.command(port, cmd)
+    frame = Frame.serialize({:call, pid, tag}, payload)
+    Port.command(port, frame)
     {:noreply, port}
   end
 
   @impl true
-  def handle_cast({:cast, pid, payload}, port) do
-    conn_id = ProcReg.query_id(pid)
-    cmd = Frame.serialize(:ps_cast, conn_id, payload)
-    Port.command(port, cmd)
+  def handle_cast({:cast, frame}, port) do
+    Port.command(port, frame)
     {:noreply, port}
   end
 
   @impl true
   def handle_info({_, {:data, data}}, port) do
-    {type, chan_id, payload} = Frame.deserialize(data)
-    pid = ProcReg.query_pid(chan_id)
-    case type do
-      :ps_call->
-        tag = CallReg.query_calltag(pid)
+    {header, payload} = Frame.deserialize(data)
+    case header do
+      {:call, pid, tag}->
         GenServer.reply({pid, tag}, payload)
-      :ps_cast->
+      {:cast, pid}->
         GenServer.cast(pid, payload)
-      :ps_monitor->
+      {:monitor, pid}->
         Process.monitor(pid)
     end
     {:noreply, port}
@@ -48,9 +40,7 @@ defmodule PortServer.Server do
 
   @impl true
   def handle_info({:DOWN, _ref, :process, pid, _reason}, port) do
-    conn_id = ProcReg.query_id(pid)
-    cmd = Frame.serialize(:ps_down, conn_id, <<>>)
-    Port.command(port, cmd)
+    Port.command(port, Frame.serialize({:down, pid}, <<>>))
     {:noreply, port}
   end
 

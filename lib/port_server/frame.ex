@@ -1,41 +1,15 @@
-defmodule PortServer.Frame.Types do
-  defmacro types(types) when is_list(types) do
-    [
-      quote do
-        def types do
-          unquote(types)
-        end
-      end
-    ]
-    ++
-    for {key, value} <- types do
-      quote do
-        defp type(unquote(value)), do: unquote(key)
-        defp id(unquote(key)), do: unquote(value)
-      end
-    end
-  end
-end
-
 defmodule PortServer.Frame do
-  import PortServer.Frame.Types
 
-  types(
-    ps_call: 0,
-    ps_cast: 1,
-    ps_monitor: 2,
-    ps_down: 3
-  )
-
-  @spec serialize(atom(), integer(), binary()) :: iodata()
-  def serialize(type, conn_id, payload) do
-    [id(type), <<conn_id::64>>, payload]
+  @spec serialize(term(), binary()) :: iodata()
+  def serialize(header, payload) do
+    header = :erlang.term_to_binary(header)
+    [<<byte_size(header)::32>>, header, payload]
   end
 
-  @spec deserialize(binary()) :: {atom(), integer(), binary()}
+  @spec deserialize(binary()) :: {term(), binary()}
   def deserialize(bin) do
-    <<id::8, conn_id::64, payload::binary>> = bin
-    {type(id), conn_id, payload}
+    <<header_size::32, header::binary-size(header_size), payload::binary>> = bin
+    {:erlang.binary_to_term(header), payload}
   end
 
 end

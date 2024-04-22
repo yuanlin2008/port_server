@@ -15,7 +15,6 @@ defmodule PortServer.MixProject do
   def application do
     [
       extra_applications: [:logger, :observer, :wx, :runtime_tools],
-      mod: {PortServer.Application, []}
     ]
   end
 

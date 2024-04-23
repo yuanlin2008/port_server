@@ -2,7 +2,7 @@
   "name": "port-server",
   "version": "1.0.0",
   "description": "**TODO: Add description**",
-  "main": "src/index.js",
+  "main": "src/server.js",
   "directories": {
     "lib": "lib",
     "test": "test"

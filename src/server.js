@@ -1,10 +1,10 @@
-import fs from "fs"
-import { FrameReader, FrameWriter, onFrame, sendFrame } from "./frame"
+const fs = require("fs")
+const { Reader, Writer, onFrame, sendFrame } = require("./frame.js")
 
 // process.on("uncaughtException", (err, ori) => {
 //   const s = `Caught exception: ${err}\n` + `Exception origin: ${ori}\n`
 //   console.error(s)
-//   const writer = new FrameWriter()
+//   const writer = new Writer()
 //   writer.writeString("exception")
 //   writer.writeString(s)
 //   sendFrame(output, writer)
@@ -13,8 +13,8 @@ import { FrameReader, FrameWriter, onFrame, sendFrame } from "./frame"
 const input = fs.createReadStream(null, { fd: 3 })
 const output = fs.createWriteStream(null, { fd: 4 })
 
-export function reply(pid, tag, payload) {
-  const writer = new FrameWriter()
+function reply(pid, tag, payload) {
+  const writer = new Writer()
   writer.writeString("reply")
   writer.writeTerm(pid)
   writer.writeTerm(tag)
@@ -22,29 +22,29 @@ export function reply(pid, tag, payload) {
   sendFrame(output, writer)
 }
 
-export function cast(pid, payload) {
-  const writer = new FrameWriter()
+function cast(pid, payload) {
+  const writer = new Writer()
   writer.writeString("cast")
   writer.writeTerm(pid)
   writer.writeString(JSON.stringify(payload))
   sendFrame(output, writer)
 }
 
-export function monitor(pid) {
-  const writer = new FrameWriter()
+function monitor(pid) {
+  const writer = new Writer()
   writer.writeString("monitor")
   writer.writeTerm(pid)
   sendFrame(output, writer)
 }
 
-export function start(handler) {
+function start(handler) {
   onFrame(input, (frame) => {
     handleFrame(frame, handler)
   })
 }
 
 function handleFrame(frame, handler) {
-  const reader = new FrameReader(frame)
+  const reader = new Reader(frame)
   const t = reader.readString()
   if (t === "call") {
     const pid = reader.readTerm()
@@ -59,4 +59,11 @@ function handleFrame(frame, handler) {
     const pid = reader.readTerm()
     handler.handleDown(pid)
   }
+}
+
+module.exports = {
+  reply,
+  cast,
+  monitor,
+  start,
 }

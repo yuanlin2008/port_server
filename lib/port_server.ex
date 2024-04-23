@@ -26,26 +26,17 @@ defmodule PortServer do
 
   @doc """
   """
-  @spec call(GenServer.server(), String.t(), term(), timeout()) :: term()
-  def call(server, name, payload, timeout \\ 5000) do
-    payload =
-      Jason.encode!(%{
-        name: name,
-        payload: payload
-      })
+  @spec call(GenServer.server(), term(), timeout()) :: term()
+  def call(server, payload, timeout \\ 5000) do
+    payload = Jason.encode!(payload)
 
     GenServer.call(server, {:call, payload}, timeout)
-    |> Jason.decode()
+    |> Jason.decode!()
   end
 
-  @spec cast(GenServer.server(), String.t(), term()) :: term()
-  def cast(server, name, payload) do
-    payload =
-      Jason.encode!(%{
-        name: name,
-        payload: payload
-      })
-
+  @spec cast(GenServer.server(), term()) :: term()
+  def cast(server, payload) do
+    payload = Jason.encode!(payload)
     frame = Frame.serialize(:cast, self(), payload)
     GenServer.cast(server, {:cast, frame})
   end

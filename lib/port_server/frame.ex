@@ -1,37 +1,41 @@
 defmodule PortServer.Frame do
-  def serialize(:call, pid, tag, payload) do
-    pid = :erlang.term_to_binary(pid)
-    tag = :erlang.term_to_binary(tag)
-    [0, <<byte_size(pid)::16>>, pid, <<byte_size(tag)::16>>, tag, payload]
+  def serialize(id, blocks)
+      when is_number(id) and
+             id >= 0 and
+             id < 256 and
+             is_list(blocks) do
+    [
+      id,
+      blocks
+      |> Enum.map(fn term ->
+        case term do
+          pid when is_pid(pid) ->
+            bin = :erlang.term_to_binary(pid)
+            [<<0::8, byte_size(bin)::32>>, bin]
+
+          ref when is_reference(ref) ->
+            bin = :erlang.term_to_binary(ref)
+            [<<1::8, byte_size(bin)::32>>, bin]
+
+          bin when is_binary(term) ->
+            [<<2::8, byte_size(bin)::32>>, bin]
+        end
+      end)
+    ]
   end
 
-  def serialize(:cast, pid, payload) do
-    pid = :erlang.term_to_binary(pid)
-    [1, <<byte_size(pid)::16>>, pid, payload]
-  end
+  def deserialize(bin) when is_binary(bin) do
+    <<id::8, rest::binary>> = bin
 
-  def serialize(:down, pid) do
-    pid = :erlang.term_to_binary(pid)
-    [2, <<byte_size(pid)::16>>, pid]
-  end
+    blocks =
+      for <<t::8, s::32, b::binary-size(s) <- rest>> do
+        case t do
+          0 -> :erlang.binary_to_term(b)
+          1 -> :erlang.binary_to_term(b)
+          2 -> b
+        end
+      end
 
-  def deserialize(bin) do
-    <<type::8, rest::binary>> = bin
-
-    case type do
-      0 ->
-        <<pid_size::16, pid_bin::binary-size(pid_size), tag_size::16,
-          tag_bin::binary-size(tag_size), payload::binary>> = rest
-
-        {:call, :erlang.binary_to_term(pid_bin), :erlang.binary_to_term(tag_bin), payload}
-
-      1 ->
-        <<pid_size::16, pid_bin::binary-size(pid_size), payload::binary>> = rest
-        {:cast, :erlang.binary_to_term(pid_bin), payload}
-
-      2 ->
-        <<pid_size::16, pid_bin::binary-size(pid_size)>> = rest
-        {:monitor, :erlang.binary_to_term(pid_bin)}
-    end
+    {id, blocks}
   end
 end

@@ -40,16 +40,23 @@ export class FrameReader {
     this.type = this.buf.readUint8(this.ptr)
     this.ptr += 1
   }
-  readString() {
-    const len = this.buf.readUInt16LE(this.ptr)
-    this.ptr += 2
-    const r = this.buf.toString(undefined, this.ptr, this.ptr + len)
-    this.ptr += len
-    return r
+  readPid() {
+    return this.readBlock(0)
   }
-  readPayload() {
-    const b = this.buf.slice(this.ptr)
-    return JSON.parse(b as any)
+  readRef() {
+    return this.readBlock(1)
+  }
+  readString() {
+    return this.readBlock(2)
+  }
+  private readBlock(t: number) {
+    if (t !== this.buf[this.ptr]) throw new Error("Invalid frame")
+    this.ptr += 1
+    const len = this.buf.readUInt32LE(this.ptr)
+    this.ptr += 4
+    const block = this.buf.toString(undefined, this.ptr, this.ptr + len)
+    this.ptr += len
+    return block
   }
 }
 
@@ -58,18 +65,22 @@ export class FrameWriter {
   constructor(type: number) {
     this.bufs.push(Buffer.from([type]))
   }
-  writeString(s: string) {
-    const lenBuf = Buffer.allocUnsafe(2)
-    lenBuf.writeUInt16LE(s.length)
-    this.bufs.push(lenBuf)
-    const sb = Buffer.allocUnsafe(s.length)
-    sb.write(s)
-    this.bufs.push(sb)
+  writePid(pid: string) {
+    this.writeBlock(0, pid)
   }
-
-  writePayload(payload: any) {
-    const s = JSON.stringify(payload)
-    const b = Buffer.from(s)
-    this.bufs.push(b)
+  writeRef(ref: string) {
+    this.writeBlock(1, ref)
+  }
+  writeString(s: string) {
+    this.writeBlock(2, s)
+  }
+  private writeBlock(t: number, b: string) {
+    this.bufs.push(Buffer.from([t]))
+    const lenBuf = Buffer.allocUnsafe(4)
+    lenBuf.writeUInt32LE(b.length)
+    this.bufs.push(lenBuf)
+    const sb = Buffer.allocUnsafe(b.length)
+    sb.write(b)
+    this.bufs.push(sb)
   }
 }

@@ -5,61 +5,59 @@ export type Pid = string
 export type CallTag = string
 
 export interface Handler {
-  handleCall(pid: Pid, tag: CallTag, name: string, payload: any): void
-  handleCast(pid: Pid, name: string, payload: any): void
+  handleCall(pid: Pid, tag: CallTag, payload: any): void
+  handleCast(pid: Pid, payload: any): void
   handleDown(pid: Pid): void
 }
+process.on("uncaughtException", (err, ori) => {
+  const s = `Caught exception: ${err}\n` + `Exception origin: ${ori}\n`
+  const writer = new FrameWriter(255)
+  writer.writePayload(s)
+})
+const input = fs.createReadStream("", { fd: 3 })
+const output = fs.createWriteStream("", { fd: 4 })
 
-export interface API {
-  cast(pid: Pid, payload: any): void
-  reply(pid: Pid, tag: CallTag, payload: any): void
-  monitor(pid: Pid): void
+export function reply(pid: Pid, tag: CallTag, payload: any) {
+  const writer = new FrameWriter(0)
+  writer.writePid(pid)
+  writer.writeRef(tag)
+  writer.writeString(JSON.stringify(payload))
+  sendFrame(output, writer)
 }
 
-export function run(handler: Handler): API {
-  const input = fs.createReadStream("", { fd: 3 })
-  const output = fs.createWriteStream("", { fd: 4 })
+export function cast(pid: Pid, payload: any) {
+  const writer = new FrameWriter(1)
+  writer.writePid(pid)
+  writer.writeString(JSON.stringify(payload))
+  sendFrame(output, writer)
+}
 
+export function monitor(pid: Pid) {
+  const writer = new FrameWriter(2)
+  writer.writePid(pid)
+  sendFrame(output, writer)
+}
+
+export function start(handler: Handler) {
   onFrame(input, (frame) => {
     handleFrame(frame, handler)
   })
-
-  return {
-    reply(pid: Pid, tag: CallTag, payload: any) {
-      const writer = new FrameWriter(0)
-      writer.writeString(pid)
-      writer.writeString(tag)
-      writer.writePayload(payload)
-      sendFrame(output, writer)
-    },
-    cast(pid: Pid, payload: any) {
-      const writer = new FrameWriter(1)
-      writer.writeString(pid)
-      writer.writePayload(payload)
-      sendFrame(output, writer)
-    },
-    monitor(pid: Pid) {
-      const writer = new FrameWriter(2)
-      writer.writeString(pid)
-      sendFrame(output, writer)
-    },
-  }
 }
 
 function handleFrame(frame: Buffer, handler: Handler) {
   const reader = new FrameReader(frame)
   const t = reader.type
   if (t === 0) {
-    const pid = reader.readString()
-    const tag = reader.readString()
-    const payload = reader.readPayload()
-    handler.handleCall(pid, tag, payload.name, payload.payload)
+    const pid = reader.readPid()
+    const tag = reader.readRef()
+    const payload = reader.readString()
+    handler.handleCall(pid, tag, JSON.parse(payload))
   } else if (t === 1) {
-    const pid = reader.readString()
-    const payload = reader.readPayload()
-    handler.handleCast(pid, payload.name, payload.payload)
+    const pid = reader.readPid()
+    const payload = reader.readString()
+    handler.handleCast(pid, JSON.parse(payload))
   } else if (t === 2) {
-    const pid = reader.readString()
+    const pid = reader.readPid()
     handler.handleDown(pid)
   }
 }

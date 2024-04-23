@@ -5,19 +5,22 @@ defmodule PortServer.Port do
   def open(prog, args, options) do
     Port.open(
       {:spawn_executable, find_executable(prog)},
-      get_port_options(args, options))
+      get_port_options(args, options)
+    )
   end
 
-  defdelegate command(port , data, options \\ []), to: Port
+  defdelegate command(port, data, options \\ []), to: Port
 
   defp find_executable(prog) do
     cond do
       File.exists?(prog) ->
         Path.absname(prog)
-      exe=:os.find_executable(:erlang.binary_to_list(prog)) ->
+
+      exe = :os.find_executable(:erlang.binary_to_list(prog)) ->
         List.to_string(exe)
+
       true ->
-        throw "Command not found: #{prog}"
+        raise ArgumentError, "Command not found: #{prog}"
     end
   end
 
@@ -32,19 +35,21 @@ defmodule PortServer.Port do
 
   defp get_port_options(args, options) do
     options = validate_options(options)
-    @port_options
-    ++ [{:args, args}]
-    ++ (if dir=options[:dir], do: [cd: dir], else: [])
-    ++ (if env=options[:env], do: [env: env], else: [])
+
+    @port_options ++
+      [{:args, args}] ++
+      if(dir = options[:dir], do: [cd: dir], else: []) ++
+      if env = options[:env], do: [env: env], else: []
   end
 
   defp validate_options(options) do
     case Keyword.split(options, @valid_options) do
       {options, []} ->
         options
+
       {_, illegal_options} ->
-        raise "Unsupported key(s) options: #{inspect(Keyword.keys(illegal_options))}"
+        raise ArgumentError,
+              "Unsupported key(s) options: #{inspect(Keyword.keys(illegal_options))}"
     end
   end
-
 end

@@ -37,7 +37,7 @@ defmodule PortServer do
   @spec cast(GenServer.server(), term()) :: term()
   def cast(server, payload) do
     payload = Jason.encode!(payload)
-    frame = Frame.serialize(:cast, self(), payload)
+    frame = Frame.serialize(1, [self(), payload])
     GenServer.cast(server, {:cast, frame})
   end
 end

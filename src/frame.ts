@@ -34,20 +34,13 @@ export function sendFrame(output: WriteStream, frame: FrameWriter) {
 }
 
 export class FrameReader {
-  public type: number
   private ptr: number = 0
-  constructor(private buf: Buffer) {
-    this.type = this.buf.readUint8(this.ptr)
-    this.ptr += 1
-  }
-  readPid() {
+  constructor(private buf: Buffer) {}
+  readTerm() {
     return this.readBlock(0)
   }
-  readRef() {
-    return this.readBlock(1)
-  }
   readString() {
-    return this.readBlock(2)
+    return this.readBlock(1)
   }
   private readBlock(t: number) {
     if (t !== this.buf[this.ptr]) throw new Error("Invalid frame")
@@ -62,17 +55,12 @@ export class FrameReader {
 
 export class FrameWriter {
   public bufs: Buffer[] = []
-  constructor(type: number) {
-    this.bufs.push(Buffer.from([type]))
-  }
-  writePid(pid: string) {
+  constructor() {}
+  writeTerm(pid: string) {
     this.writeBlock(0, pid)
   }
-  writeRef(ref: string) {
-    this.writeBlock(1, ref)
-  }
   writeString(s: string) {
-    this.writeBlock(2, s)
+    this.writeBlock(1, s)
   }
   private writeBlock(t: number, b: string) {
     this.bufs.push(Buffer.from([t]))

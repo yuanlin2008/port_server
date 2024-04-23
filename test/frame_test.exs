@@ -3,9 +3,8 @@ defmodule FrameTest do
   use ExUnit.Case, async: true
 
   test "serialization" do
-    id = 99
     blocks = [self(), "aaaa", make_ref(), self(), "abcde"]
-    bin = Frame.serialize(id, blocks) |> :erlang.iolist_to_binary()
-    assert {^id, ^blocks} = Frame.deserialize(bin)
+    bin = Frame.serialize(blocks) |> :erlang.iolist_to_binary()
+    assert ^blocks = Frame.deserialize(bin)
   end
 end

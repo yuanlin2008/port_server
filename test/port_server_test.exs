@@ -2,7 +2,8 @@ defmodule PortServerTest do
   use ExUnit.Case, async: true
 
   test "" do
-    # PortServer.start("npx", ["ts-node", "./test/te"])
-    # :timer.sleep(5000)
+    {:ok, pid} = PortServer.start({"npx", ["ts-node", "test.ts"], [dir: "./test"]})
+    ret = PortServer.call(pid, %{a: 2, b: 3})
+    assert ^ret = 5
   end
 end

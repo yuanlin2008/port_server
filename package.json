@@ -2,7 +2,7 @@
   "name": "port-server",
   "version": "1.0.0",
   "description": "**TODO: Add description**",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "directories": {
     "lib": "lib",
     "test": "test"
@@ -19,10 +19,5 @@
   "bugs": {
     "url": "https://github.com/yuanlin2008/port_server/issues"
   },
-  "homepage": "https://github.com/yuanlin2008/port_server#readme",
-  "devDependencies": {
-    "@types/node": "^20.12.7",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
-  }
+  "homepage": "https://github.com/yuanlin2008/port_server#readme"
 }

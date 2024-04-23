@@ -1,10 +1,8 @@
-import { ReadStream, WriteStream } from "fs"
-
 export function onFrame(
-  input: ReadStream,
-  frameCallbak: (frame: Buffer) => void
+  input,
+  frameCallbak
 ) {
-  let length: number | null = null
+  let length = null
   input.on("readable", () => {
     while (true) {
       if (length === null) length = readLength()
@@ -25,7 +23,7 @@ export function onFrame(
   }
 }
 
-export function sendFrame(output: WriteStream, frame: FrameWriter) {
+export function sendFrame(output, frame) {
   // todo: handle 'drain'
   const buf = Buffer.concat(frame.bufs)
   const lenBuf = Buffer.alloc(4)
@@ -34,15 +32,15 @@ export function sendFrame(output: WriteStream, frame: FrameWriter) {
 }
 
 export class FrameReader {
-  private ptr: number = 0
-  constructor(private buf: Buffer) {}
+  ptr = 0
+  constructor(buf) {}
   readTerm() {
     return this.readBlock(0)
   }
   readString() {
     return this.readBlock(1)
   }
-  private readBlock(t: number) {
+  readBlock(t) {
     if (t !== this.buf[this.ptr]) throw new Error("Invalid frame")
     this.ptr += 1
     const len = this.buf.readUInt32LE(this.ptr)
@@ -54,15 +52,15 @@ export class FrameReader {
 }
 
 export class FrameWriter {
-  public bufs: Buffer[] = []
+  bufs = []
   constructor() {}
-  writeTerm(pid: string) {
-    this.writeBlock(0, pid)
+  writeTerm(term) {
+    this.writeBlock(0, term)
   }
-  writeString(s: string) {
+  writeString(s) {
     this.writeBlock(1, s)
   }
-  private writeBlock(t: number, b: string) {
+  writeBlock(t, b) {
     this.bufs.push(Buffer.from([t]))
     const lenBuf = Buffer.allocUnsafe(4)
     lenBuf.writeUInt32LE(b.length)

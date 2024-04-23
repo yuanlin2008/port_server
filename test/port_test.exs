@@ -20,7 +20,7 @@ defmodule PortTest do
   end
 
   test "echo-ts" do
-    port = Port.open("npx", ["ts-node", "echo.ts"], dir: "./test")
+    port = Port.open("node", ["echo-ts.js"], dir: "./test")
 
     Enum.each(1..4096, fn i ->
       msg = "abcde#{i}"

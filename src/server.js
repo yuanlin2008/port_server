@@ -1,14 +1,6 @@
 import fs from "fs"
 import { FrameReader, FrameWriter, onFrame, sendFrame } from "./frame"
 
-export type Pid = string
-export type CallTag = string
-
-export interface Handler {
-  handleCall(pid: Pid, tag: CallTag, payload: any): void
-  handleCast(pid: Pid, payload: any): void
-  handleDown(pid: Pid): void
-}
 // process.on("uncaughtException", (err, ori) => {
 //   const s = `Caught exception: ${err}\n` + `Exception origin: ${ori}\n`
 //   console.error(s)
@@ -18,10 +10,10 @@ export interface Handler {
 //   sendFrame(output, writer)
 // })
 
-const input = fs.createReadStream("", { fd: 3 })
-const output = fs.createWriteStream("", { fd: 4 })
+const input = fs.createReadStream(null, { fd: 3 })
+const output = fs.createWriteStream(null, { fd: 4 })
 
-export function reply(pid: Pid, tag: CallTag, payload: any) {
+export function reply(pid, tag, payload) {
   const writer = new FrameWriter()
   writer.writeString("reply")
   writer.writeTerm(pid)
@@ -30,7 +22,7 @@ export function reply(pid: Pid, tag: CallTag, payload: any) {
   sendFrame(output, writer)
 }
 
-export function cast(pid: Pid, payload: any) {
+export function cast(pid, payload) {
   const writer = new FrameWriter()
   writer.writeString("cast")
   writer.writeTerm(pid)
@@ -38,20 +30,20 @@ export function cast(pid: Pid, payload: any) {
   sendFrame(output, writer)
 }
 
-export function monitor(pid: Pid) {
+export function monitor(pid) {
   const writer = new FrameWriter()
   writer.writeString("monitor")
   writer.writeTerm(pid)
   sendFrame(output, writer)
 }
 
-export function start(handler: Handler) {
+export function start(handler) {
   onFrame(input, (frame) => {
     handleFrame(frame, handler)
   })
 }
 
-function handleFrame(frame: Buffer, handler: Handler) {
+function handleFrame(frame, handler) {
   const reader = new FrameReader(frame)
   const t = reader.readString()
   if (t === "call") {

@@ -6,22 +6,24 @@ defmodule PortServer.MixProject do
       app: :port_server,
       version: "0.1.0",
       elixir: "~> 1.16",
+      build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
-      deps: deps(),
       description: description(),
-      package: package()
+      package: package(),
+      deps: deps(),
+      name: "PortServer",
+      source_url: "https://github.com/yuanlin2008/port_server"
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :observer, :wx, :runtime_tools]
+      extra_applications: [:logger]
     ]
   end
 
   def description do
-    "PortServer is a GenServer interface to NodeJS implementation, built on top of Erlang ports."
+    "PortServer is a GenServer implementation of a external local server(NodeJS)."
   end
 
   def package do

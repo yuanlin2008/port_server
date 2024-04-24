@@ -1,4 +1,6 @@
 defmodule PortServer.Frame do
+  @moduledoc false
+
   def serialize(blocks)
       when is_list(blocks) do
     blocks

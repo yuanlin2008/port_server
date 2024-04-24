@@ -1,6 +1,5 @@
 defmodule PortServer.Port do
-  @moduledoc """
-  """
+  @moduledoc false
   @spec open(String.t(), [String.t()], Keyword.t()) :: {:ok, port()} | {:error, term()}
   def open(prog, args, options) do
     with {:ok, exe} <- find_executable(prog) do

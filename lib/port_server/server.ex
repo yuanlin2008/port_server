@@ -1,6 +1,6 @@
 defmodule PortServer.Server do
-  @moduledoc """
-  """
+  @moduledoc false
+
   alias PortServer.Port
   alias PortServer.Frame
   use GenServer

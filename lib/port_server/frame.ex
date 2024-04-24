@@ -5,9 +5,11 @@ defmodule PortServer.Frame do
     |> Enum.map(fn term ->
       case term do
         bin when is_binary(term) ->
+          # string
           [<<1::8, byte_size(bin)::32>>, bin]
 
         _ ->
+          # term
           bin = :erlang.term_to_binary(term)
           [<<0::8, byte_size(bin)::32>>, bin]
       end
@@ -17,7 +19,9 @@ defmodule PortServer.Frame do
   def deserialize(bin) when is_binary(bin) do
     for <<t::8, s::32, b::binary-size(s) <- bin>> do
       case t do
+        # term
         0 -> :erlang.binary_to_term(b)
+        # string
         1 -> b
       end
     end

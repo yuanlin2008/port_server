@@ -7,8 +7,10 @@ defmodule PortServer.Server do
 
   @impl true
   def init({prog, args, options}) do
-    port = Port.open(prog, args, options)
-    {:ok, port}
+    with {:ok, port} <- Port.open(prog, args, options),
+         :ok <- wait_start(port, options) do
+      {:ok, port}
+    end
   end
 
   @impl true
@@ -32,7 +34,10 @@ defmodule PortServer.Server do
         GenServer.reply({pid, tag}, payload)
 
       ["cast", pid, payload] ->
-        GenServer.cast(pid, payload)
+        # todo: optimization.
+        spawn(fn ->
+          GenServer.cast(pid, Jason.decode!(payload))
+        end)
 
       ["monitor", pid] ->
         Process.monitor(pid)
@@ -48,7 +53,24 @@ defmodule PortServer.Server do
   end
 
   @impl true
-  def handle_info({_port, {:exit_status, _status}}, port) do
-    {:stop, :error, port}
+  def handle_info({_port, {:exit_status, status}}, port) do
+    {:stop, {:exit_status, status}, port}
+  end
+
+  defp wait_start(port, options) do
+    timeout = Keyword.get(options, :start_timeout, 5000)
+
+    receive do
+      {^port, {:exit_status, status}} ->
+        {:stop, {:exit_status, status}}
+
+      {^port, {:data, data}} ->
+        case Frame.deserialize(data) do
+          ["started"] -> :ok
+          _ -> {:stop, :invalid_startup}
+        end
+    after
+      timeout -> {:stop, :start_timeout}
+    end
   end
 end

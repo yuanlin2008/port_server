@@ -1,12 +1,17 @@
 defmodule PortServer.Port do
   @moduledoc """
   """
-  @spec open(String.t(), [String.t()], Keyword.t()) :: port()
+  @spec open(String.t(), [String.t()], Keyword.t()) :: {:ok, port()} | {:error, term()}
   def open(prog, args, options) do
-    Port.open(
-      {:spawn_executable, find_executable(prog)},
-      get_port_options(args, options)
-    )
+    with {:ok, exe} <- find_executable(prog) do
+      port =
+        Port.open(
+          {:spawn_executable, exe},
+          get_port_options(args, options)
+        )
+
+      {:ok, port}
+    end
   end
 
   defdelegate command(port, data, options \\ []), to: Port
@@ -14,13 +19,13 @@ defmodule PortServer.Port do
   defp find_executable(prog) do
     cond do
       File.exists?(prog) ->
-        Path.absname(prog)
+        {:ok, Path.absname(prog)}
 
       exe = :os.find_executable(:erlang.binary_to_list(prog)) ->
-        List.to_string(exe)
+        {:ok, List.to_string(exe)}
 
       true ->
-        raise ArgumentError, "Command not found: #{prog}"
+        {:stop, {:cmd_not_found, prog}}
     end
   end
 
@@ -31,25 +36,10 @@ defmodule PortServer.Port do
     :nouse_stdio
   ]
 
-  @valid_options ~w(dir env)a
-
   defp get_port_options(args, options) do
-    options = validate_options(options)
-
     @port_options ++
       [{:args, args}] ++
       if(dir = options[:dir], do: [cd: dir], else: []) ++
       if env = options[:env], do: [env: env], else: []
-  end
-
-  defp validate_options(options) do
-    case Keyword.split(options, @valid_options) do
-      {options, []} ->
-        options
-
-      {_, illegal_options} ->
-        raise ArgumentError,
-              "Unsupported key(s) options: #{inspect(Keyword.keys(illegal_options))}"
-    end
   end
 end

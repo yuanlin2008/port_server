@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "**TODO: Add description**",
   "main": "src/server.js",
+  "types": "src/server.d.ts",
   "directories": {
     "lib": "lib",
     "test": "test"

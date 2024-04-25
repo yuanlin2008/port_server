@@ -1,13 +1,12 @@
 {
   "name": "port-server",
-  "version": "1.0.0",
-  "description": "**TODO: Add description**",
+  "version": "0.1.0",
+  "description": "Elixir PortServer",
   "main": "src/index.js",
   "types": "src/index.d.ts",
-  "directories": {
-    "lib": "lib",
-    "test": "test"
-  },
+  "files": [
+    "src"
+  ],
   "scripts": {
     "test": "mix test"
   },
@@ -16,7 +15,7 @@
     "url": "git+https://github.com/yuanlin2008/port_server.git"
   },
   "author": "yuanlin2008@hotmail.com",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/yuanlin2008/port_server/issues"
   },

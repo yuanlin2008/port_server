@@ -24,7 +24,7 @@ defmodule PortServer.MixProject do
   end
 
   def description do
-    "PortServer is a GenServer implementation of a external local server(NodeJS)."
+    "Implementing `GenServer` using NodeJS."
   end
 
   def docs do

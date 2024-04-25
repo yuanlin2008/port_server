@@ -41,7 +41,9 @@ defmodule PortServer.MixProject do
   defp deps do
     [
       {:jason, "~> 1.4"},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.16", only: :dev, runtime: false},
+      {:makeup_javascript, "~> 0.1.0", only: :dev, runtime: false}
     ]
   end
 end

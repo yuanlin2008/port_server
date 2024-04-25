@@ -42,63 +42,60 @@ defmodule PortServerTest do
   test "call" do
     pid =
       server_run("""
-      server.on("call", function(pid, tag, payload){
+      server.onCall("add", (pid, tag, payload)=>{
         server.reply(pid, tag, payload.a + payload.b)
       })
       """)
 
-    assert 3 == PortServer.call(pid, %{a: 1, b: 2})
+    assert 3 == PortServer.call(pid, "add", %{a: 1, b: 2})
   end
 
   test "cast" do
     pid =
       server_run("""
-      server.on("cast", function(pid, payload){
-        server.cast(pid, payload.a + payload.b)
+      server.onCast("add", function(pid, payload){
+        server.cast(pid, "result", payload.a + payload.b)
       })
       """)
 
-    PortServer.cast(pid, %{a: 1, b: 2})
-    assert_receive {:"$gen_cast", 3}
+    PortServer.cast(pid, "add", %{a: 1, b: 2})
+    assert_receive {:"$gen_cast", {"result", 3}}
   end
 
   test "monitor" do
     pid =
       server_run("""
       let down = false
-      server.on("call", (pid, tag, payload)=>{
-        if(payload === "register"){
-          server.monitor(pid)
-          server.reply(pid, tag, "ok")
-        }else{
-          server.reply(pid, tag, down)
-        }
+      server.onCall("monitor", (pid, tag, payload)=>{
+        server.monitor(pid, (pid)=>{down = true})
+        server.reply(pid, tag, "ok")
       })
-      server.on("down", (pid)=>{down = true})
+      server.onCall("get", (pid, tag, payload)=>{
+        server.reply(pid, tag, down)
+      })
       """)
 
     Task.await(
       Task.async(fn ->
-        assert "ok" = PortServer.call(pid, "register")
+        assert "ok" = PortServer.call(pid, "monitor")
       end)
     )
 
     :timer.sleep(1000)
-    assert true = PortServer.call(pid, "check")
+    assert true = PortServer.call(pid, "get")
   end
 
   test "concurrent call" do
     pid =
       server_run("""
-      let down = false
-      server.on("call", (pid, tag, payload)=>{
+      server.onCall("test", (pid, tag, payload)=>{
         setTimeout(()=> server.reply(pid, tag, payload), 1000)
       })
       """)
 
     Enum.map(1..4096, fn i ->
       Task.async(fn ->
-        assert ^i = PortServer.call(pid, i)
+        assert ^i = PortServer.call(pid, "test", i)
       end)
     end)
     |> Task.await_many()

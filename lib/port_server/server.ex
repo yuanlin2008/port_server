@@ -14,14 +14,14 @@ defmodule PortServer.Server do
   end
 
   @impl true
-  def handle_call({:call, payload}, {pid, tag}, port) do
-    Port.command(port, Frame.serialize(["call", pid, tag, payload]))
+  def handle_call({:call, msg, payload}, {pid, tag}, port) do
+    Port.command(port, Frame.serialize(["call", pid, tag, msg, payload]))
     {:noreply, port}
   end
 
   @impl true
-  def handle_cast({:cast, pid, payload}, port) do
-    Port.command(port, Frame.serialize(["cast", pid, payload]))
+  def handle_cast({:cast, pid, msg, payload}, port) do
+    Port.command(port, Frame.serialize(["cast", pid, msg, payload]))
     {:noreply, port}
   end
 
@@ -33,10 +33,10 @@ defmodule PortServer.Server do
       ["reply", pid, tag, payload] ->
         GenServer.reply({pid, tag}, payload)
 
-      ["cast", pid, payload] ->
+      ["cast", pid, msg, payload] ->
         # todo: optimization.
         spawn(fn ->
-          GenServer.cast(pid, Jason.decode!(payload))
+          GenServer.cast(pid, {msg, Jason.decode!(payload)})
         end)
 
       ["monitor", pid] ->

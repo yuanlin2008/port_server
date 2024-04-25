@@ -34,18 +34,18 @@ defmodule PortServer do
 
   @doc """
   """
-  @spec call(GenServer.server(), term(), timeout()) :: term()
-  def call(server, payload, timeout \\ 5000) do
+  @spec call(GenServer.server(), String.t(), term(), timeout()) :: term()
+  def call(server, msg, payload \\ nil, timeout \\ 5000) do
     payload = Jason.encode!(payload)
 
-    GenServer.call(server, {:call, payload}, timeout)
+    GenServer.call(server, {:call, msg, payload}, timeout)
     |> Jason.decode!()
   end
 
-  @spec cast(GenServer.server(), term()) :: term()
-  def cast(server, payload) do
+  @spec cast(GenServer.server(), String.t(), term()) :: term()
+  def cast(server, msg, payload \\ nil) do
     payload = Jason.encode!(payload)
-    GenServer.cast(server, {:cast, self(), payload})
+    GenServer.cast(server, {:cast, self(), msg, payload})
   end
 
   defp validate_command(command) do

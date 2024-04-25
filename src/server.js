@@ -15,6 +15,10 @@ const { Reader, Writer, recv, send } = require("./frame.js")
 const input = fs.createReadStream(null, { fd: 3 })
 const output = fs.createWriteStream(null, { fd: 4 })
 
+const downCallbacks = new Map()
+const callCallbacks = new Map()
+const castCallbacks = new Map()
+
 /**
  * Reply to a call from pid.
  * @param {*} pid
@@ -32,22 +36,24 @@ exports.reply = function (pid, tag, payload) {
 
 /**
  * Cast a message to pid.
- * @param {*} pid
- * @param {*} payload
  */
-exports.cast = function (pid, payload) {
+exports.cast = function (pid, msg, payload) {
   const writer = new Writer()
   writer.writeString("cast")
   writer.writeTerm(pid)
+  writer.writeString(msg)
   writer.writeString(JSON.stringify(payload))
   send(output, writer)
 }
 
 /**
  * monitor pid's down event.
- * @param {*} pid
  */
-exports.monitor = function (pid) {
+exports.monitor = function (pid, callback) {
+  if (downCallbacks.has(pid)) {
+    throw new Error(`Pid(${pid} already monitored)`)
+  }
+  downCallbacks.set(pid, callback)
   const writer = new Writer()
   writer.writeString("monitor")
   writer.writeTerm(pid)
@@ -55,33 +61,47 @@ exports.monitor = function (pid) {
 }
 
 const handlers = {
-  call(reader, cb) {
+  call(reader) {
     const pid = reader.readTerm()
     const tag = reader.readTerm()
+    const msg = reader.readString()
     const payload = reader.readString()
-    cb(pid, tag, JSON.parse(payload))
+    const callback = callCallbacks.get(msg)
+    callback(pid, tag, JSON.parse(payload))
   },
-  cast(reader, cb) {
+  cast(reader) {
     const pid = reader.readTerm()
+    const msg = reader.readString()
     const payload = reader.readString()
-    cb(pid, JSON.parse(payload))
+    const callback = castCallbacks.get(msg)
+    callback(pid, JSON.parse(payload))
   },
-  down(reader, cb) {
+  down(reader) {
     const pid = reader.readTerm()
+    const cb = downCallbacks.get(pid)
+    downCallbacks.delete(pid)
     cb(pid)
   },
 }
 
-const callbacks = {}
-
 /**
- * Set event callback.
- * @param {*} event
+ * Register call handler.
+ * @param {*} msg
  * @param {*} callback
  */
-exports.on = function (event, callback) {
-  callbacks[event] = callback
+exports.onCall = function (msg, callback) {
+  callCallbacks.set(msg, callback)
 }
+
+/**
+ * Register cast handler.
+ * @param {*} msg
+ * @param {*} callback
+ */
+exports.onCast = function (msg, callback) {
+  castCallbacks.set(msg, callback)
+}
+
 /**
  * Start the port server.
  */
@@ -97,6 +117,5 @@ exports.start = function () {
 function handleFrame(frame) {
   const reader = new Reader(frame)
   const t = reader.readString()
-  if (callbacks[t] === undefined) return
-  handlers[t](reader, callbacks[t])
+  handlers[t](reader)
 }

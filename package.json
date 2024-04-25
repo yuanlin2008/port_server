@@ -1,7 +1,20 @@
 {
   "name": "port-server",
-  "version": "0.1.0",
   "description": "Elixir PortServer",
+  "version": "0.1.0",
+  "author": "yuanlin2008@hotmail.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yuanlin2008/port_server.git"
+  },
+  "homepage": "https://github.com/yuanlin2008/port_server#readme",
+  "keywords": [
+    "Elixir",
+    "Erlang",
+    "port",
+    "framework"
+  ],
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "files": [
@@ -9,15 +22,5 @@
   ],
   "scripts": {
     "test": "mix test"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/yuanlin2008/port_server.git"
-  },
-  "author": "yuanlin2008@hotmail.com",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/yuanlin2008/port_server/issues"
-  },
-  "homepage": "https://github.com/yuanlin2008/port_server#readme"
+  }
 }

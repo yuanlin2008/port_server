@@ -2,8 +2,8 @@
   "name": "port-server",
   "version": "1.0.0",
   "description": "**TODO: Add description**",
-  "main": "src/server.js",
-  "types": "src/server.d.ts",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
   "directories": {
     "lib": "lib",
     "test": "test"

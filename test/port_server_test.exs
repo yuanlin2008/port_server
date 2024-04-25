@@ -29,7 +29,7 @@ defmodule PortServerTest do
          [
            "-e",
            """
-           const server = require("./src/server.js")
+           const server = require("./src/index.js")
            #{script}
            server.start()
            """

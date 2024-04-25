@@ -10,6 +10,7 @@ defmodule PortServer.MixProject do
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
+      docs: docs(),
       deps: deps(),
       name: "PortServer",
       source_url: "https://github.com/yuanlin2008/port_server"
@@ -24,6 +25,12 @@ defmodule PortServer.MixProject do
 
   def description do
     "PortServer is a GenServer implementation of a external local server(NodeJS)."
+  end
+
+  def docs do
+    [
+      extras: ["README.md"]
+    ]
   end
 
   def package do
